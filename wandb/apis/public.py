@@ -189,8 +189,7 @@ class RetryingClient(object):
 
 
 class Api(object):
-    """
-    Used for querying the wandb server.
+    """Used for querying the wandb server.
 
     Examples:
         Most common way to initialize
@@ -251,13 +250,13 @@ class Api(object):
         self._client = RetryingClient(self._base_client)
 
     def create_run(self, **kwargs):
-        """Create a new run"""
+        """Create a new run."""
         if kwargs.get("entity") is None:
             kwargs["entity"] = self.default_entity
         return Run.create(self, **kwargs)
 
     def sync_tensorboard(self, root_dir, run_id=None, project=None, entity=None):
-        """Sync a local directory containing tfevent files to wandb"""
+        """Sync a local directory containing tfevent files to wandb."""
         from wandb.sync import SyncManager  # noqa: F401  TODO: circular import madness
 
         run_id = run_id or util.generate_id()
@@ -306,15 +305,14 @@ class Api(object):
         return self._default_entity
 
     def flush(self):
-        """
-        The api object keeps a local cache of runs, so if the state of the run may
+        """The api object keeps a local cache of runs, so if the state of the run may
         change while executing your script you must clear the local cache with `api.flush()`
         to get the latest values associated with the run.
         """
         self._runs = {}
 
     def _parse_project_path(self, path):
-        """Returns project and entity for project specified by path"""
+        """Return project and entity for project specified by path."""
         project = self.settings["project"]
         entity = self.settings["entity"] or self.default_entity
         if path is None:
@@ -325,7 +323,9 @@ class Api(object):
         return parts
 
     def _parse_path(self, path):
-        """Parses paths in the following formats:
+        """Parse paths for entity, project, and run.
+
+        Parses paths in the following formats:
 
         url: entity/project/runs/run_id
         path: entity/project/run_id
@@ -354,7 +354,7 @@ class Api(object):
         return entity, project, run
 
     def _parse_artifact_path(self, path):
-        """Returns project, entity and artifact name for project specified by path"""
+        """Return project, entity and artifact name for project specified by path."""
         project = self.settings["project"]
         entity = self.settings["entity"] or self.default_entity
         if path is None:
@@ -369,8 +369,7 @@ class Api(object):
         return parts
 
     def projects(self, entity=None, per_page=200):
-        """
-        Get projects for a given entity.
+        """Get projects for a given entity.
 
         Arguments:
             entity: (str) Name of the entity requested.  If None will fallback to
@@ -426,8 +425,7 @@ class Api(object):
         return self._reports[key]
 
     def runs(self, path="", filters=None, order="-created_at", per_page=50):
-        """
-        Return a set of runs from a project that match the filters provided.
+        """Return a set of runs from a project that match the filters provided.
 
         You can filter by `config.*`, `summary.*`, `state`, `entity`, `createdAt`, etc.
 
@@ -486,8 +484,7 @@ class Api(object):
 
     @normalize_exceptions
     def run(self, path=""):
-        """
-        Returns a single run by parsing path in the form entity/project/run_id.
+        """Return a single run by parsing path in the form entity/project/run_id.
 
         Arguments:
             path: (str) path to run in the form `entity/project/run_id`.
@@ -504,8 +501,7 @@ class Api(object):
 
     @normalize_exceptions
     def sweep(self, path=""):
-        """
-        Returns a sweep by parsing path in the form `entity/project/sweep_id`.
+        """Return a sweep by parsing path in the form `entity/project/sweep_id`.
 
         Arguments:
             path: (str, optional) path to sweep in the form entity/project/sweep_id.  If api.entity
@@ -532,14 +528,13 @@ class Api(object):
 
     @normalize_exceptions
     def artifact_versions(self, type_name, name, per_page=50):
-        entity, project, collection_name = self._parse_artifact_path(name)
+        entity, project, collection_name = self(name)
         artifact_type = ArtifactType(self.client, entity, project, type_name)
         return artifact_type.collection(collection_name).versions(per_page=per_page)
 
     @normalize_exceptions
     def artifact(self, name, type=None):
-        """
-        Returns a single artifact by parsing path in the form `entity/project/run_id`.
+        """Return a single artifact by parsing path in the form `entity/project/run_id`.
 
         Arguments:
             name: (str) An artifact name. May be prefixed with entity/project. Valid names
@@ -659,9 +654,7 @@ class User(Attrs):
 
 
 class Projects(Paginator):
-    """
-    An iterable collection of `Project` objects.
-    """
+    """An iterable collection of `Project` objects."""
 
     QUERY = gql(
         """
@@ -743,6 +736,7 @@ class Project(Attrs):
 
 class Runs(Paginator):
     """An iterable collection of runs associated with a project and optional filter.
+
     This is generally used indirectly via the `Api`.runs method
     """
 
@@ -847,8 +841,7 @@ class Runs(Paginator):
 
 
 class Run(Attrs):
-    """
-    A single run associated with an entity and project.
+    """A single run associated with an entity and project.
 
     Attributes:
         tags ([str]): a list of tags associated with the run
@@ -872,8 +865,7 @@ class Run(Attrs):
     """
 
     def __init__(self, client, entity, project, run_id, attrs={}):
-        """
-        Run is always initialized by calling api.runs() where api is an instance of wandb.Api
+        """Run is always initialized by calling api.runs() where api is an instance of wandb.Api.
         """
         super(Run, self).__init__(dict(attrs))
         self.client = client
@@ -930,7 +922,7 @@ class Run(Attrs):
 
     @classmethod
     def create(cls, api, run_id=None, project=None, entity=None):
-        """Create a run for the given project"""
+        """Create a run for the given project."""
         run_id = run_id or util.generate_id()
         project = project or api.settings.get("project") or "uncategorized"
         mutation = gql(
@@ -1036,9 +1028,7 @@ class Run(Attrs):
 
     @normalize_exceptions
     def update(self):
-        """
-        Persists changes to the run object to the wandb backend.
-        """
+        """Persist changes to the run object to the wandb backend."""
         mutation = gql(
             """
         mutation UpsertBucket($id: String!, $description: String, $display_name: String, $notes: String, $tags: [String!], $config: JSONString!, $groupName: String) {
@@ -1066,9 +1056,7 @@ class Run(Attrs):
 
     @normalize_exceptions
     def delete(self, delete_artifacts=False):
-        """
-        Deletes the given run from the wandb backend.
-        """
+        """Delete the given run from the wandb backend."""
         mutation = gql(
             """
             mutation DeleteRun(
@@ -1111,7 +1099,7 @@ class Run(Attrs):
         return json.dumps(config)
 
     def _exec(self, query, **kwargs):
-        """Execute a query against the cloud backend"""
+        """Execute a query against the cloud backend."""
         variables = {"entity": self.entity, "project": self.project, "name": self.id}
         variables.update(kwargs)
         return self.client.execute(query, variable_values=variables)
@@ -1198,9 +1186,9 @@ class Run(Attrs):
     def history(
         self, samples=500, keys=None, x_axis="_step", pandas=True, stream="default"
     ):
-        """
-        Returns sampled history metrics for a run.  This is simpler and faster if you are ok with
-        the history records being sampled.
+        """Return sampled history metrics for a run.
+
+        This is simpler and faster if you are ok with the history records being sampled.
 
         Arguments:
             samples (int, optional): The number of samples to return
@@ -1237,8 +1225,7 @@ class Run(Attrs):
 
     @normalize_exceptions
     def scan_history(self, keys=None, page_size=1000, min_step=None, max_step=None):
-        """
-        Returns an iterable collection of all history records for a run.
+        """Return an iterable collection of all history records for a run.
 
         Example:
             Export all the loss values for an example run
@@ -1301,7 +1288,7 @@ class Run(Attrs):
 
     @normalize_exceptions
     def use_artifact(self, artifact):
-        """ Declare an artifact as an input to a run.
+        """Declare an artifact as an input to a run.
 
         Arguments:
             artifact (`Artifact`): An artifact returned from
@@ -1328,7 +1315,7 @@ class Run(Attrs):
 
     @normalize_exceptions
     def log_artifact(self, artifact, aliases=None):
-        """ Declare an artifact as output of a run.
+        """Declare an artifact as output of a run.
 
         Arguments:
             artifact (`Artifact`): An artifact returned from
@@ -1499,7 +1486,7 @@ class Sweep(Attrs):
             )
 
     def best_run(self, order=None):
-        "Returns the best run sorted by the metric defined in config or the order passed in"
+        "Returns the best run sorted by the metric defined in config or the order passed in."
         if order is None:
             order = self.order
         else:
@@ -1549,7 +1536,7 @@ class Sweep(Attrs):
         query=None,
         **kwargs
     ):
-        """Execute a query against the cloud backend"""
+        """Execute a query against the cloud backend."""
         if query is None:
             query = cls.QUERY
 
@@ -1846,7 +1833,7 @@ class Reports(Paginator):
 
 
 class QueryGenerator(object):
-    """QueryGenerator is a helper object to write filters for runs"""
+    """QueryGenerator is a helper object to write filters for runs."""
 
     INDIVIDUAL_OP_TO_MONGO = {
         "!=": "$ne",
@@ -2462,7 +2449,7 @@ class ArtifactType(object):
 
     @normalize_exceptions
     def collections(self, per_page=50):
-        """Artifact collections"""
+        """Artifact collections."""
         return ProjectArtifactCollections(
             self.client, self.entity, self.project, self.type
         )
@@ -2493,7 +2480,7 @@ class ArtifactCollection(object):
 
     @normalize_exceptions
     def versions(self, per_page=50):
-        """Artifact versions"""
+        """Artifact versions."""
         return ArtifactVersions(
             self.client,
             self.entity,
@@ -2623,8 +2610,7 @@ class _DownloadedArtifactEntry(artifacts.ArtifactEntry):
 
 
 class Artifact(artifacts.Artifact):
-    """
-    A wandb Artifact.
+    """A wandb Artifact.
 
     An artifact that has been logged, including all its attributes, links to the runs
     that use it, and a link to the run that logged it.
@@ -2853,8 +2839,7 @@ class Artifact(artifacts.Artifact):
 
     @property
     def aliases(self):
-        """
-        The aliases associated with this artifact.
+        """The aliases associated with this artifact.
 
         Returns:
             List[str]: The aliases associated with this artifact.
@@ -2873,7 +2858,7 @@ class Artifact(artifacts.Artifact):
 
     @staticmethod
     def expected_type(client, name, entity_name, project_name):
-        """Returns the expected type for a given artifact name and project"""
+        """Returns the expected type for a given artifact name and project."""
         query = gql(
             """
         query Artifact(
@@ -2946,17 +2931,15 @@ class Artifact(artifacts.Artifact):
         raise ValueError("Cannot add files to an artifact once it has been saved")
 
     def _add_download_root(self, dir_path):
-        """Adds `dir_path` as one of the known directories which this
-        artifact treated as a root"""
+        """Adds `dir_path` as one of the known directories which this artifact treated as a root."""
         self._download_roots.add(os.path.abspath(dir_path))
 
     def _is_download_root(self, dir_path):
-        """Determines if `dir_path` is a directory which this artifact as
-        treated as a root for downloading"""
+        """Determines if `dir_path` is a directory which this artifact astreated as a root for downloading."""
         return dir_path in self._download_roots
 
     def _local_path_to_name(self, file_path):
-        """Converts a local file path to a path entry in the artifact"""
+        """Converts a local file path to a path entry in the artifact."""
         abs_file_path = os.path.abspath(file_path)
         abs_file_parts = abs_file_path.split(os.sep)
         for i in range(len(abs_file_parts) + 1):
@@ -2965,8 +2948,7 @@ class Artifact(artifacts.Artifact):
         return None
 
     def _get_obj_entry(self, name):
-        """
-        When objects are added with `.add(obj, name)`, the name is typically
+        """When objects are added with `.add(obj, name)`, the name is typically
         changed to include the suffix of the object type when serializing to JSON. So we need
         to be able to resolve a name, without tasking the user with appending .THING.json.
         This method returns an entry if it exists by a suffixed name.
@@ -3112,7 +3094,7 @@ class Artifact(artifacts.Artifact):
             print("Warning: skipped verification of %s refs" % ref_count)
 
     def file(self, root=None):
-        """Download a single file artifact to dir specified by the <root>
+        """Download a single file artifact to dir specified by the `root`.
 
         Arguments:
             root: (str, optional) The root directory in which to place the file. Defaults to './artifacts/<self.name>/'.
@@ -3151,9 +3133,7 @@ class Artifact(artifacts.Artifact):
 
     @normalize_exceptions
     def save(self):
-        """
-        Persists artifact changes to the wandb backend.
-        """
+        """Persists artifact changes to the wandb backend."""
         mutation = gql(
             """
         mutation updateArtifact(
@@ -3297,7 +3277,7 @@ class Artifact(artifacts.Artifact):
         return self._manifest
 
     def _load_dependent_manifests(self):
-        """Helper function to interrogate entries and ensure we have loaded their manifests"""
+        """Helper function to interrogate entries and ensure we have loaded their manifests."""
         # Make sure dependencies are avail
         for entry_key in self._manifest.entries:
             entry = self._manifest.entries[entry_key]
@@ -3309,19 +3289,19 @@ class Artifact(artifacts.Artifact):
 
     @staticmethod
     def _manifest_entry_is_artifact_reference(entry):
-        """Helper function determines if an ArtifactEntry in manifest is an artifact reference"""
+        """Helper function determines if an ArtifactEntry in manifest is an artifact reference."""
         return (
             entry.ref is not None
             and urllib.parse.urlparse(entry.ref).scheme == "wandb-artifact"
         )
 
     def _get_ref_artifact_from_entry(self, entry):
-        """Helper function returns the referenced artifact from an entry"""
+        """Helper function returns the referenced artifact from an entry."""
         artifact_id = util.host_from_path(entry.ref)
         return Artifact.from_id(util.hex_to_b64_id(artifact_id), self.client)
 
     def used_by(self):
-        """Retrieves the runs which use this artifact directly
+        """Retrieves the runs which use this artifact directly.
 
         Returns:
             [Run]: a list of Run objects which use this artifact
@@ -3365,7 +3345,7 @@ class Artifact(artifacts.Artifact):
         return runs
 
     def logged_by(self):
-        """Retrieves the run which logged this artifact
+        """Retrieves the run which logged this artifact.
 
         Returns:
             Run: Run object which logged this artifact
@@ -3408,7 +3388,8 @@ class Artifact(artifacts.Artifact):
 
 class ArtifactVersions(Paginator):
     """An iterable collection of artifact versions associated with a project and optional filter.
-    This is generally used indirectly via the `Api`.artifact_versions method
+
+    This is generally used indirectly via the `Api.artifact_versions` method
     """
 
     QUERY = gql(
